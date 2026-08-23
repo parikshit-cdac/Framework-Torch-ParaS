@@ -1,0 +1,44 @@
+nohup: ignoring input
+==============================================================================
+  Executing Process-Isolated Param2 Benchmark Suite (H200)
+==============================================================================
+
+>>> [1/3] Running Process 1: Torch-ParaS Backend (paras:1)...
+[transformers] You are using a model of type `param2moe` to instantiate a model of type ``. This may be expected if you are loading a checkpoint that shares a subset of the architecture (e.g., loading a `sam2_video` checkpoint into `Sam2Model`), but is otherwise not supported and can yield errors. Please verify that the checkpoint is compatible with the model you are instantiating.
+[transformers] You are using a model of type `param2moe` to instantiate a model of type ``. This may be expected if you are loading a checkpoint that shares a subset of the architecture (e.g., loading a `sam2_video` checkpoint into `Sam2Model`), but is otherwise not supported and can yield errors. Please verify that the checkpoint is compatible with the model you are instantiating.
+[Patch] Transformers DynamicLayer.update patched.
+========================================================================================
+  Param2 Isolated Single-Backend Benchmark
+========================================================================================
+PyTorch version : 2.13.0+cu130
+Transformers    : 5.15.0
+Model           : /home/aicloud/parikshit/models/Param2-17B-A2.4B-Thinking
+Backend Target  : paras
+
+========================================================================================
+  BACKEND: Torch-ParaS (paras:1)
+========================================================================================
+
+[Load] Loading tokenizer and model...
+Loading weights:   0%|          | 0/4071 [00:00<?, ?it/s]Loading weights:  14%|█▎        | 550/4071 [00:00<00:00, 5496.38it/s]Loading weights:  27%|██▋       | 1100/4071 [00:00<00:00, 4788.55it/s]Loading weights:  39%|███▉      | 1585/4071 [00:00<00:00, 4300.93it/s]Loading weights:  50%|████▉     | 2022/4071 [00:00<00:00, 4068.92it/s]Loading weights:  60%|█████▉    | 2433/4071 [00:00<00:00, 3962.23it/s]Loading weights:  70%|██████▉   | 2831/4071 [00:00<00:00, 3893.52it/s]Loading weights:  79%|███████▉  | 3221/4071 [00:00<00:00, 3853.95it/s]Loading weights:  89%|████████▊ | 3607/4071 [00:00<00:00, 3823.62it/s]Loading weights:  98%|█████████▊| 3990/4071 [00:00<00:00, 3811.27it/s]Loading weights: 100%|██████████| 4071/4071 [00:01<00:00, 4005.81it/s]
+Model ready on paras:1 in 10.9s
+
+[Latency/Throughput] Profiling prefill (TTFT)...
+  [prefill] starting seq_len=16...
+[transformers] `use_return_dict` is deprecated! Use `return_dict` instead!
+/home/aicloud/kuldeep/venvs/main/lib/python3.12/site-packages/transformers/modeling_attn_mask_utils.py:71: FutureWarning: The attention mask API under `transformers.modeling_attn_mask_utils` (`AttentionMaskConverter`) is deprecated and will be removed in Transformers v5.10. Please use the new API in `transformers.masking_utils`.
+  warnings.warn(DEPRECATION_MESSAGE, FutureWarning)
+/home/aicloud/kuldeep/venvs/main/lib/python3.12/site-packages/transformers/modeling_attn_mask_utils.py:281: FutureWarning: The attention mask API under `transformers.modeling_attn_mask_utils` (`AttentionMaskConverter`) is deprecated and will be removed in Transformers v5.10. Please use the new API in `transformers.masking_utils`.
+  warnings.warn(DEPRECATION_MESSAGE, FutureWarning)
+    warmup 1/1 took 5.11s
+  S=  16 | TTFT= 4610.96 ms (+/-76.54) | throughput=      3.5 tok/s
+  [prefill] starting seq_len=64...
+    warmup 1/1 took 5.52s
+  S=  64 | TTFT= 5096.18 ms (+/-29.21) | throughput=     12.6 tok/s
+
+[Latency/Throughput] Profiling decode (ITL)...
+  [decode] starting token_budget=8...
+    warmup 1/1 (8 tokens) took 16.60s
+  N=   8 | ITL=1289.84 ms/tok | throughput=   0.78 tok/s
+  [decode] starting token_budget=16...
+    warmup 1/1 (16 tokens) took 26.35s
