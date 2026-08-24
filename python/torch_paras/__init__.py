@@ -78,12 +78,14 @@ def is_gpu_device(device: int) -> bool:
     return _C.is_gpu_device(device)
 
 
-def synchronize(device: int | None = None) -> None:
+def synchronize(device: int | torch.device | None = None) -> None:
     """Blocks until queued work on one device (or all devices) completes."""
     if device is None:
         _C.synchronize_all()
+    elif isinstance(device, torch.device):
+        _C.synchronize(device.index if device.index is not None else 0)
     else:
-        _C.synchronize(device)
+        _C.synchronize(int(device))
 
 
 def manual_seed(seed: int, device: int | None = None) -> None:

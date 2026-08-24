@@ -14,10 +14,10 @@ os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
 sys.path.insert(
     0,
-    "/home/aicloud/parikshit/torch_paras/Framework-Torch-ParaS/python"
+    "/home/amdgpu02/parikshit/torch_paras/Framework-Torch-ParaS/python"
 )
 
-MODEL_PATH = "/home/aicloud/parikshit/models/Param2-17B-A2.4B-Thinking"
+MODEL_PATH = "/home/amdgpu02/parikshit/models/Param2-17B-A2.4B-Thinking"
 EXPECTED_VOCAB_SIZE = 128008
 
 import torch
@@ -31,7 +31,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 # Configuration
 # ---------------------------------------------------------------------------
 
-QUICK_MODE = True
+QUICK_MODE = False
 
 if QUICK_MODE:
     PREFILL_SEQ_LENGTHS = [16, 64]
