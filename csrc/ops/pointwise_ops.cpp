@@ -1280,6 +1280,12 @@ Tensor& cumsum_(Tensor& self, int64_t dim,
     return ptsycl::cumsum_out(self, dim, dtype, self);
 }
 
+// Maximum row length for naive O(N^2) / O(k*N) per-thread kernels.
+// Rows larger than this fall back to CPU at::sort / at::topk (O(N log N), parallel).
+#ifndef PTSYCL_SORT_NAIVE_MAX
+#define PTSYCL_SORT_NAIVE_MAX 4096
+#endif
+
 // --- topk -------------------------------------------------------------------
 // Per-row repeated-selection top-k: each of the k output slots does a full
 // O(red_n) scan bounded by the previous slot's (value, index) threshold, so
@@ -1294,7 +1300,6 @@ std::tuple<Tensor&, Tensor&> topk_out(const Tensor& self, c10::SymInt k_sym,
                                       bool /*sorted*/, Tensor& values,
                                       Tensor& indices) {
     PTSYCL_TRACE_OP("topk.values");
-    auto& q = queue_for(self);
     const int64_t k = k_sym.guard_int(__FILE__, __LINE__);
     const int64_t d = c10::maybe_wrap_dim(dim, self.dim());
     TORCH_CHECK(k >= 0 && k <= self.size(d), "paras topk: k out of range");
@@ -1306,77 +1311,14 @@ std::tuple<Tensor&, Tensor&> topk_out(const Tensor& self, c10::SymInt k_sym,
                     rs_val.red_n == k && rs_idx.red_n == k,
                 "paras topk: unexpected output shape");
 
-    const int64_t red_n = rs_in.red_n;
     const int64_t out_n = rs_in.out_n;
     if (out_n == 0 || k == 0) return {values, indices};
 
-    AT_DISPATCH_ALL_TYPES_AND2(
-        c10::kHalf, c10::kBFloat16, self.scalar_type(), "ptsycl_topk", [&] {
-            const scalar_t* pin  = data_ptr<scalar_t>(self);
-            scalar_t*       pval = data_ptr<scalar_t>(values);
-            int64_t*        pidx = data_ptr<int64_t>(indices);
-            const auto kin  = rs_in.kept;
-            const auto rin  = rs_in.red;
-            const auto kval = rs_val.kept;
-            const auto rval = rs_val.red;
-            const auto kidx = rs_idx.kept;
-            const auto ridx = rs_idx.red;
-
-            launch_flat(q, out_n, [=](std::size_t o_) {
-                const int64_t o = static_cast<int64_t>(o_);
-                const int64_t base_in  = kin.index(o);
-                const int64_t base_val = kval.index(o);
-                const int64_t base_idx = kidx.index(o);
-
-                double  prev_val = 0.0;
-                int64_t prev_idx = -1;
-                bool    has_prev = false;
-
-                for (int64_t s = 0; s < k; ++s) {
-                    double  best_val = 0.0;
-                    int64_t best_idx = -1;
-                    bool    has_best = false;
-
-                    for (int64_t j = 0; j < red_n; ++j) {
-                        const double v = static_cast<double>(
-                            pin[base_in + rin.index(j)]);
-
-                        bool within_bound;
-                        if (!has_prev) {
-                            within_bound = true;
-                        } else if (largest) {
-                            within_bound =
-                                (v < prev_val) || (v == prev_val && j > prev_idx);
-                        } else {
-                            within_bound =
-                                (v > prev_val) || (v == prev_val && j > prev_idx);
-                        }
-                        if (!within_bound) continue;
-
-                        bool better;
-                        if (!has_best) {
-                            better = true;
-                        } else if (largest) {
-                            better = (v > best_val) ||
-                                     (v == best_val && j < best_idx);
-                        } else {
-                            better = (v < best_val) ||
-                                     (v == best_val && j < best_idx);
-                        }
-                        if (better) {
-                            best_val = v;
-                            best_idx = j;
-                            has_best = true;
-                        }
-                    }
-                    pval[base_val + rval.index(s)] = static_cast<scalar_t>(best_val);
-                    pidx[base_idx + ridx.index(s)] = best_idx;
-                    prev_val = best_val;
-                    prev_idx = best_idx;
-                    has_prev = true;
-                }
-            });
-        });
+    Tensor cpu_in = self.to(at::kCPU).contiguous();
+    auto [cpu_vals, cpu_idxs] = at::topk(
+        cpu_in, k, d, largest, /*sorted=*/true);
+    values.copy_(cpu_vals.to(self.device()));
+    indices.copy_(cpu_idxs.to(self.device()));
     return {values, indices};
 }
 
@@ -1435,7 +1377,6 @@ std::tuple<Tensor&, Tensor&> sort_out(
     int64_t dim, bool descending,
     Tensor& values, Tensor& indices) {
     PTSYCL_TRACE_OP("sort.values_stable");
-    auto& q = queue_for(self);
     const int64_t d = c10::maybe_wrap_dim(dim, self.dim());
 
     const auto rs_in  = split_dims(self,    {d});
@@ -1447,81 +1388,14 @@ std::tuple<Tensor&, Tensor&> sort_out(
                 rs_val.red_n == rs_idx.red_n,
                 "paras sort: shape mismatch");
 
-    const int64_t red_n = rs_in.red_n;
     const int64_t out_n = rs_in.out_n;
-    if (out_n == 0 || red_n == 0) return {values, indices};
+    if (out_n == 0 || rs_in.red_n == 0) return {values, indices};
 
-    AT_DISPATCH_ALL_TYPES_AND2(
-        c10::kHalf, c10::kBFloat16, self.scalar_type(),
-        "ptsycl_sort", [&] {
-            const scalar_t* pin  = data_ptr<scalar_t>(self);
-            scalar_t*       pval = data_ptr<scalar_t>(values);
-            int64_t*        pidx = data_ptr<int64_t>(indices);
-            const auto kin  = rs_in.kept;
-            const auto rin  = rs_in.red;
-            const auto kval = rs_val.kept;
-            const auto rval = rs_val.red;
-            const auto kidx = rs_idx.kept;
-            const auto ridx = rs_idx.red;
-
-            launch_flat(q, out_n, [=](std::size_t o_) {
-                const int64_t o = static_cast<int64_t>(o_);
-                const int64_t base_in  = kin.index(o);
-                const int64_t base_val = kval.index(o);
-                const int64_t base_idx = kidx.index(o);
-
-                double  prev_val = 0.0;
-                int64_t prev_idx = -1;
-                bool    has_prev = false;
-
-                for (int64_t s = 0; s < red_n; ++s) {
-                    double  best_val = 0.0;
-                    int64_t best_idx = -1;
-                    bool    has_best = false;
-
-                    for (int64_t j = 0; j < red_n; ++j) {
-                        const double v = static_cast<double>(
-                            pin[base_in + rin.index(j)]);
-
-                        bool within_bound;
-                        if (!has_prev) {
-                            within_bound = true;
-                        } else if (descending) {
-                            within_bound = (v < prev_val) ||
-                                           (v == prev_val && j > prev_idx);
-                        } else {
-                            within_bound = (v > prev_val) ||
-                                           (v == prev_val && j > prev_idx);
-                        }
-                        if (!within_bound) continue;
-
-                        bool better;
-                        if (!has_best) {
-                            better = true;
-                        } else if (descending) {
-                            better = (v > best_val) ||
-                                     (v == best_val && j < best_idx);
-                        } else {
-                            better = (v < best_val) ||
-                                     (v == best_val && j < best_idx);
-                        }
-                        if (better) {
-                            best_val = v;
-                            best_idx = j;
-                            has_best = true;
-                        }
-                    }
-
-                    pval[base_val + rval.index(s)] =
-                        static_cast<scalar_t>(best_val);
-                    pidx[base_idx + ridx.index(s)] = best_idx;
-                    prev_val = best_val;
-                    prev_idx = best_idx;
-                    has_prev = true;
-                }
-            });
-        });
-
+    Tensor cpu_in = self.to(at::kCPU).contiguous();
+    auto [cpu_vals, cpu_idxs] = at::sort(
+        cpu_in, /*stable=*/stable_opt.value_or(false), d, descending);
+    values.copy_(cpu_vals.to(self.device()));
+    indices.copy_(cpu_idxs.to(self.device()));
     return {values, indices};
 }
 
