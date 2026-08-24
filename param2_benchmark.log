@@ -1,128 +1,0 @@
-nohup: ignoring input
-[transformers] You are using a model of type `param2moe` to instantiate a model of type ``. This may be expected if you are loading a checkpoint that shares a subset of the architecture (e.g., loading a `sam2_video` checkpoint into `Sam2Model`), but is otherwise not supported and can yield errors. Please verify that the checkpoint is compatible with the model you are instantiating.
-[transformers] You are using a model of type `param2moe` to instantiate a model of type ``. This may be expected if you are loading a checkpoint that shares a subset of the architecture (e.g., loading a `sam2_video` checkpoint into `Sam2Model`), but is otherwise not supported and can yield errors. Please verify that the checkpoint is compatible with the model you are instantiating.
-[Patch] Transformers DynamicLayer.update patched.
-========================================================================================
-  Param3 Full Benchmark Suite: Torch-ParaS vs Native PyTorch CUDA
-========================================================================================
-PyTorch version : 2.13.0+cu130
-Transformers    : 5.15.0
-Model           : /home/aicloud/parikshit/models/Param2-17B-A2.4B-Thinking
-
-========================================================================================
-  BACKEND: Torch-ParaS (paras:1)
-========================================================================================
-
-[Load] Loading tokenizer and model...
-Loading weights:   0%|          | 0/4071 [00:00<?, ?it/s]Loading weights:  14%|█▍        | 581/4071 [00:00<00:00, 5804.36it/s]Loading weights:  29%|██▊       | 1162/4071 [00:00<00:00, 4996.27it/s]Loading weights:  41%|████      | 1669/4071 [00:00<00:00, 4416.81it/s]Loading weights:  52%|█████▏    | 2119/4071 [00:00<00:00, 4104.88it/s]Loading weights:  62%|██████▏   | 2535/4071 [00:00<00:00, 3936.89it/s]Loading weights:  72%|███████▏  | 2931/4071 [00:00<00:00, 3850.01it/s]Loading weights:  81%|████████▏ | 3317/4071 [00:00<00:00, 3773.81it/s]Loading weights:  91%|█████████ | 3695/4071 [00:00<00:00, 3747.75it/s]Loading weights: 100%|█████████▉| 4070/4071 [00:01<00:00, 3715.70it/s]Loading weights: 100%|██████████| 4071/4071 [00:01<00:00, 3986.75it/s]
-Model ready on paras:1 in 12.5s
-
-[Latency/Throughput] Profiling prefill (TTFT)...
-  [prefill] starting seq_len=16...
-[transformers] `use_return_dict` is deprecated! Use `return_dict` instead!
-/home/aicloud/kuldeep/venvs/main/lib/python3.12/site-packages/transformers/modeling_attn_mask_utils.py:71: FutureWarning: The attention mask API under `transformers.modeling_attn_mask_utils` (`AttentionMaskConverter`) is deprecated and will be removed in Transformers v5.10. Please use the new API in `transformers.masking_utils`.
-  warnings.warn(DEPRECATION_MESSAGE, FutureWarning)
-/home/aicloud/kuldeep/venvs/main/lib/python3.12/site-packages/transformers/modeling_attn_mask_utils.py:281: FutureWarning: The attention mask API under `transformers.modeling_attn_mask_utils` (`AttentionMaskConverter`) is deprecated and will be removed in Transformers v5.10. Please use the new API in `transformers.masking_utils`.
-  warnings.warn(DEPRECATION_MESSAGE, FutureWarning)
-    warmup 1/1 took 4.30s
-  S=  16 | TTFT= 4158.34 ms (+/-21.90) | throughput=      3.8 tok/s
-  [prefill] starting seq_len=64...
-    warmup 1/1 took 4.94s
-  S=  64 | TTFT= 4324.47 ms (+/-24.61) | throughput=     14.8 tok/s
-
-[Latency/Throughput] Profiling decode (ITL)...
-  [decode] starting token_budget=8...
-    warmup 1/1 (8 tokens) took 14.97s
-  N=   8 | ITL=1131.87 ms/tok | throughput=   0.88 tok/s
-  [decode] starting token_budget=16...
-    warmup 1/1 (16 tokens) took 23.95s
-  N=  16 | ITL=1133.02 ms/tok | throughput=   0.88 tok/s
-
-[Correctness] Capturing reference logits for fidelity comparison...
-
-[Stability] Running multi-turn conversational test...
-    [turn 1] token   1 | +5822.32s | ''
-    [WARN] token 1 took 5822.3s, over the 60s quick-mode threshold — backend is likely hung or scaling quadratically, not just slow.
-    [turn 1] token   2 | +5817.17s | ''
-    [WARN] token 2 took 5817.2s, over the 60s quick-mode threshold — backend is likely hung or scaling quadratically, not just slow.
-    [turn 1] token   3 | +5817.80s | 'assistant\n'
-    [WARN] token 3 took 5817.8s, over the 60s quick-mode threshold — backend is likely hung or scaling quadratically, not just slow.
-    [turn 1] token   4 | +5818.53s | ''
-    [WARN] token 4 took 5818.5s, over the 60s quick-mode threshold — backend is likely hung or scaling quadratically, not just slow.
-    [turn 1] token   5 | +5818.29s | ''
-    [WARN] token 5 took 5818.3s, over the 60s quick-mode threshold — backend is likely hung or scaling quadratically, not just slow.
-    [turn 1] token   6 | +5818.23s | 'assistant\n'
-    [WARN] token 6 took 5818.2s, over the 60s quick-mode threshold — backend is likely hung or scaling quadratically, not just slow.
-    [turn 1] token   7 | +5817.53s | ''
-    [WARN] token 7 took 5817.5s, over the 60s quick-mode threshold — backend is likely hung or scaling quadratically, not just slow.
-    [turn 1] token   8 | +5818.80s | ''
-    [WARN] token 8 took 5818.8s, over the 60s quick-mode threshold — backend is likely hung or scaling quadratically, not just slow.
-    [turn 1] token   9 | +  0.00s | '##'
-[transformers] You are using a model of type `param2moe` to instantiate a model of type ``. This may be expected if you are loading a checkpoint that shares a subset of the architecture (e.g., loading a `sam2_video` checkpoint into `Sam2Model`), but is otherwise not supported and can yield errors. Please verify that the checkpoint is compatible with the model you are instantiating.
-[transformers] You are using a model of type `param2moe` to instantiate a model of type ``. This may be expected if you are loading a checkpoint that shares a subset of the architecture (e.g., loading a `sam2_video` checkpoint into `Sam2Model`), but is otherwise not supported and can yield errors. Please verify that the checkpoint is compatible with the model you are instantiating.
-  Turn 1: generated 8 tokens | NaN layers=0 | Inf layers=0
-
-[Correctness] Running backward-pass gradient verification...
-Gradients: 3967/4051 valid | NaN=0 | Inf=0
-
-[Cleanup] Freeing Torch-ParaS model...
-
-========================================================================================
-  BACKEND: Native PyTorch CUDA (cuda:0)
-========================================================================================
-
-[Load] Loading tokenizer and model...
-Loading weights:   0%|          | 0/4071 [00:00<?, ?it/s]Loading weights:  13%|█▎        | 511/4071 [00:00<00:00, 5109.05it/s]Loading weights:  25%|██▌       | 1022/4071 [00:00<00:00, 4519.46it/s]Loading weights:  36%|███▋      | 1479/4071 [00:00<00:00, 4160.80it/s]Loading weights:  47%|████▋     | 1899/4071 [00:00<00:00, 4014.63it/s]Loading weights:  57%|█████▋    | 2303/4071 [00:00<00:00, 3920.18it/s]Loading weights:  66%|██████▌   | 2696/4071 [00:00<00:00, 3886.48it/s]Loading weights:  76%|███████▌  | 3085/4071 [00:00<00:00, 3851.06it/s]Loading weights:  85%|████████▌ | 3471/4071 [00:00<00:00, 3818.95it/s]Loading weights:  95%|█████████▍| 3853/4071 [00:00<00:00, 3805.97it/s]Loading weights: 100%|██████████| 4071/4071 [00:01<00:00, 3949.82it/s]
-Model ready on cuda:0 in 17.6s
-
-[Latency/Throughput] Profiling prefill (TTFT)...
-  [prefill] starting seq_len=16...
-    warmup 1/1 took 3.61s
-/home/aicloud/kuldeep/venvs/main/lib/python3.12/site-packages/transformers/modeling_attn_mask_utils.py:71: FutureWarning: The attention mask API under `transformers.modeling_attn_mask_utils` (`AttentionMaskConverter`) is deprecated and will be removed in Transformers v5.10. Please use the new API in `transformers.masking_utils`.
-  warnings.warn(DEPRECATION_MESSAGE, FutureWarning)
-/home/aicloud/kuldeep/venvs/main/lib/python3.12/site-packages/transformers/modeling_attn_mask_utils.py:281: FutureWarning: The attention mask API under `transformers.modeling_attn_mask_utils` (`AttentionMaskConverter`) is deprecated and will be removed in Transformers v5.10. Please use the new API in `transformers.masking_utils`.
-  warnings.warn(DEPRECATION_MESSAGE, FutureWarning)
-  S=  16 | TTFT=   72.38 ms (+/-2.14) | throughput=    221.0 tok/s
-  [prefill] starting seq_len=64...
-    warmup 1/1 took 0.19s
-  S=  64 | TTFT=   79.33 ms (+/-1.77) | throughput=    806.8 tok/s
-
-[Latency/Throughput] Profiling decode (ITL)...
-  [decode] starting token_budget=8...
-    warmup 1/1 (8 tokens) took 1.18s
-  N=   8 | ITL=  33.11 ms/tok | throughput=  30.20 tok/s
-  [decode] starting token_budget=16...
-    warmup 1/1 (16 tokens) took 0.87s
-  N=  16 | ITL=  33.02 ms/tok | throughput=  30.28 tok/s
-
-[Correctness] Capturing reference logits for fidelity comparison...
-
-[Stability] Running multi-turn conversational test...
-    [turn 1] token   1 | +  0.48s | ''
-    [turn 1] token   2 | +  0.22s | ''
-    [turn 1] token   3 | +  0.06s | 'assistant\n'
-    [turn 1] token   4 | +  0.06s | ''
-    [turn 1] token   5 | +  0.13s | ''
-    [turn 1] token   6 | +  0.06s | '## '
-    [turn 1] token   7 | +  0.06s | ''
-    [turn 1] token   8 | +  0.06s | ''
-    [turn 1] token   9 | +  0.00s | 'Understanding:'
-  Turn 1: generated 8 tokens | NaN layers=0 | Inf layers=0
-
-[Correctness] Running backward-pass gradient verification...
-Traceback (most recent call last):
-  File "/home/aicloud/parikshit/torch_paras/Framework-Torch-ParaS/small_param2_benchmark_cuda_paras.py", line 825, in <module>
-    main()
-  File "/home/aicloud/parikshit/torch_paras/Framework-Torch-ParaS/small_param2_benchmark_cuda_paras.py", line 737, in main
-    backward_result = run_backward_verification(model, tokenizer, device)
-                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/aicloud/parikshit/torch_paras/Framework-Torch-ParaS/small_param2_benchmark_cuda_paras.py", line 420, in run_backward_verification
-    loss.backward()
-  File "/home/aicloud/kuldeep/venvs/main/lib/python3.12/site-packages/torch/_tensor.py", line 623, in backward
-    torch.autograd.backward(
-  File "/home/aicloud/kuldeep/venvs/main/lib/python3.12/site-packages/torch/autograd/__init__.py", line 395, in backward
-    _engine_run_backward(
-  File "/home/aicloud/kuldeep/venvs/main/lib/python3.12/site-packages/torch/autograd/graph.py", line 979, in _engine_run_backward
-    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-RuntimeError: opt_ready_stream && opt_parent_stream INTERNAL ASSERT FAILED at "/__w/pytorch/pytorch/torch/csrc/autograd/engine.cpp":1096, please report a bug to PyTorch. 
